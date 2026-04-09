@@ -1,8 +1,8 @@
 # ngramflow
 
-An interactive web app to visualize how n-gram language models work — one token at a time.
+An interactive web app to visualize how n-gram language models work; one token at a time.
 
-Inspired by Claude Shannon's 1948 foundational work on information theory, **ngramflow** lets you:
+Inspired by Claude Shannon's (1948) foundational work on information theory, **ngramflow** lets you:
 
 - **Train** a model on any text corpus
 - **Choose** between word-level and character-level tokens
