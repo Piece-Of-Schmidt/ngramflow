@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N-Gram Language Model Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>N-Gram Language Model</h1>
+  <span class="sub">Interactive demo &mdash; inspired by Shannon (1948)</span>
+  <button class="btn btn-secondary btn-theory" id="btn-theory">&#402; How it works</button>
+</header>
+
+<main>
+  <!-- ── LEFT PANEL ── -->
+  <div class="panel-left">
+
+    <!-- Corpus -->
+    <div class="card">
+      <div class="card-title">Training Corpus</div>
+      <textarea class="corpus-textarea" id="corpus-input" spellcheck="false"></textarea>
+      <div class="build-row">
+        <button class="btn btn-primary" id="btn-build">Build Model</button>
+        <div class="model-stats" id="model-stats">Not built yet</div>
+      </div>
+    </div>
+
+    <!-- Token level -->
+    <div class="card">
+      <div class="seg-label">Token Level</div>
+      <div class="seg-control">
+        <input type="radio" name="level" id="lv-word" value="word" checked>
+        <label for="lv-word">Word</label>
+        <input type="radio" name="level" id="lv-char" value="char">
+        <label for="lv-char">Character</label>
+      </div>
+    </div>
+
+    <!-- N-gram order -->
+    <div class="card">
+      <div class="seg-label">Model Order</div>
+      <div class="seg-control">
+        <input type="radio" name="ngram" id="ng1" value="1">
+        <label for="ng1">Unigram</label>
+        <input type="radio" name="ngram" id="ng2" value="2" checked>
+        <label for="ng2">Bigram</label>
+        <input type="radio" name="ngram" id="ng3" value="3">
+        <label for="ng3">Trigram</label>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="card">
+      <div class="card-title">Prompt</div>
+      <div class="prompt-row">
+        <input class="prompt-input" id="prompt-input" type="text"
+               placeholder="e.g. alice was …" spellcheck="false">
+        <button class="btn btn-secondary" id="btn-reset">Reset</button>
+      </div>
+    </div>
+
+    <!-- Generation controls -->
+    <div class="card">
+      <div class="card-title">Generation</div>
+      <div class="controls-grid">
+        <div class="ctrl-group">
+          <label for="speed-slider">Speed: <span class="speed-val" id="speed-val">2.0</span> tok/s</label>
+          <input type="range" id="speed-slider" min="0.2" max="8" step="0.1" value="2">
+        </div>
+        <div class="ctrl-group">
+          <label for="max-steps">Max steps</label>
+          <input type="number" id="max-steps" value="80" min="1" max="999">
+        </div>
+      </div>
+      <div class="step-counter" id="step-counter" style="margin-top:10px">Step: <b>0</b></div>
+      <div class="action-row" style="margin-top:10px">
+        <button class="btn btn-primary btn-next" id="btn-next" disabled>&#9654; Next Token</button>
+        <button class="btn btn-auto" id="btn-auto" disabled>Auto</button>
+      </div>
+    </div>
+
+  </div><!-- /panel-left -->
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="panel-right">
+
+    <!-- Generated text -->
+    <div class="card output-card">
+      <div class="gen-header">
+        <div class="gen-header-left">
+          <div class="gen-label">Generated Text</div>
+        </div>
+      </div>
+      <div class="output-area" id="output-area"></div>
+    </div>
+
+    <!-- Top-5 next token probabilities -->
+    <div class="card top5-card">
+      <div class="top5-header">
+        <div class="card-title" style="margin-bottom:0">Next Token Probabilities (Top 5)</div>
+        <div class="context-badge" id="context-badge">—</div>
+      </div>
+      <div class="top5-rows" id="top5-rows"></div>
+    </div>
+
+  </div><!-- /panel-right -->
+</main>
+
+<!-- ── THEORY PANEL (toggleable) ── -->
+<section id="theory-panel">
+  <div class="theory-inner">
+
+    <div class="theory-card">
+      <div class="theory-title" id="theory-formula-title">Formula</div>
+      <div id="theory-formula-body"></div>
+    </div>
+
+    <div class="theory-card">
+      <div class="theory-title">Live Calculation — Last Step</div>
+      <div id="theory-calc-body">
+        <p class="theory-placeholder">Generate a token to see the live calculation.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Scripts — load order matters: corpus → model → app -->
+<script src="corpus.js" defer></script>
+<script src="model.js" defer></script>
+<script src="app.js" defer></script>
+
+</body>
+</html>
