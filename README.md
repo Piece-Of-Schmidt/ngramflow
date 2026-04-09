@@ -4,7 +4,7 @@ An interactive web app to visualize how n-gram language models work, one token a
 
 Inspired by Claude Shannon's foundational 1948 paper *A Mathematical Theory of Communication*, **ngramflow** makes statistical language modeling tangible: train a model on any text, then watch it generate word by word (or character by character), with live probability distributions at every step.
 
-![ngramflow word-level demo](images/screenshot1.png)
+![ngramflow word-level demo](images/screenshot_a.png)
 
 ## Features
 
@@ -25,7 +25,7 @@ At every step, the top 5 most probable next tokens are shown with normalized pro
 **"How it works" panel**
 Click *f How it works* to expand a panel showing the exact mathematical formula and a live worked calculation with real corpus counts from the last step.
 
-![ngramflow character-level trigram with theory panel](images/screenshot2.png)
+![ngramflow character-level trigram with theory panel](images/screenshot_b.png)
 
 **Editable corpus**
 Paste any text into the corpus field and rebuild the model instantly. Alice in Wonderland (Chapters I-III) is included as the default.
