@@ -12,7 +12,7 @@ Inspired by Claude Shannon's foundational 1948 paper *A Mathematical Theory of C
 Click *Next Token* to generate one token at a time, or enable *Auto* mode for continuous generation at adjustable speed (0.2 to 8 tokens per second).
 
 **Word-level and character-level models**
-Switch between word tokens and individual characters. The character-level trigram model in particular illustrates Shannon's original insight: readable English emerges purely from statistical patterns, no semantics required.
+Switch between word tokens and individual characters.
 
 **Three n-gram orders**
 - **Unigram** `P(w)`: probability based on global word frequency, no context
@@ -69,20 +69,12 @@ Scripts are loaded in dependency order via `defer`: `corpus.js` then `model.js` 
 
 ngramflow was built for a university seminar on word embeddings and language modeling. Suggested use:
 
-1. **Start with character-level trigrams.** The fact that near-readable English emerges from letter statistics alone is a powerful hook.
-2. **Compare model orders.** Unigram generates noise, bigram produces fragments, trigram produces surprisingly coherent phrases.
+1. **Start with character-level trigrams.** The fact that (sometimes) near-readable English emerges from letter statistics alone is a powerful hook.
+2. **Compare model orders.** Unigram generates noise, bigram produces fragments, trigram produces surprisingly coherent phrases (when trained on a large enaugh dataset).
 3. **Open the theory panel.** Students can verify the exact probability calculation behind each generated token.
-4. **Segue to neural models.** Once n-grams are understood, transformers can be framed as models with unlimited (learned) context and smoother probability estimates.
+4. **Segue to neural models.** Once n-gram models are understood, it is much easier to also understand the ratio behind decoder transformer models.
 
-## Background
-
-Before transformers, before LSTMs, before word embeddings, there were n-grams. They are:
-
-- **Transparent**: every probability is directly traceable to corpus counts
-- **Pedagogically valuable**: the bridge between raw text statistics and modern language modeling
-- **Historically significant**: Shannon used this exact approach to estimate the entropy of English in 1948
 
 ---
 
-*Built for the Word Embeddings seminar, Lisbon 2026.*
 *Corpus: Lewis Carroll, Alice's Adventures in Wonderland (1865), public domain via Project Gutenberg.*
