@@ -1,129 +1,88 @@
 # ngramflow
 
-An interactive web app to visualize how n-gram language models work; one token at a time.
+An interactive web app to visualize how n-gram language models work, one token at a time.
 
-Inspired by Claude Shannon's (1948) foundational work on information theory, **ngramflow** lets you:
+Inspired by Claude Shannon's foundational 1948 paper *A Mathematical Theory of Communication*, **ngramflow** makes statistical language modeling tangible: train a model on any text, then watch it generate word by word (or character by character), with live probability distributions at every step.
 
-- **Train** a model on any text corpus
-- **Choose** between word-level and character-level tokens
-- **Generate** text using unigram, bigram, or trigram models
-- **Watch** the top-5 most probable next tokens with live probability bars
-- **Understand** the exact conditional probability calculation behind each token
-
-Perfect for teaching language modeling fundamentals before diving into transformers and neural approaches.
+![ngramflow word-level demo](images/screenshot1.png)
 
 ## Features
 
-### Interactive Token Generation
-- Click **Next Token** to generate one token at a time with a visual flash animation
-- Enable **Auto** for continuous generation with configurable speed (0.2–8 tokens/second)
-- Set max step limits to avoid runaway generations
+**Step-by-step generation**
+Click *Next Token* to generate one token at a time, or enable *Auto* mode for continuous generation at adjustable speed (0.2 to 8 tokens per second).
 
-### Switchable Token Levels
-- **Word-level**: Classic n-gram models on vocabulary
-- **Character-level**: See how Shannon's original experiments worked — trigram characters already produce nearly readable English
+**Word-level and character-level models**
+Switch between word tokens and individual characters. The character-level trigram model in particular illustrates Shannon's original insight: readable English emerges purely from statistical patterns, no semantics required.
 
-### Three N-gram Orders
-- **Unigram** (P(w)): No context, pure frequency
-- **Bigram** (P(w | w₋₁)): One-token lookback with fallback to unigram
-- **Trigram** (P(w | w₋₂, w₋₁)): Two-token context with graceful degradation
+**Three n-gram orders**
+- **Unigram** `P(w)`: probability based on global word frequency, no context
+- **Bigram** `P(w | w₋₁)`: condition on the previous token, fall back to unigram if unseen
+- **Trigram** `P(w | w₋₂, w₋₁)`: condition on the previous two tokens, with graceful degradation
 
-### "How it Works" Panel
-Click **ƒ How it works** to see:
-- The exact mathematical formula for your chosen model order
-- Live calculation with real corpus counts from the last step generated
-- Context used and fallback warnings (when a context was never seen)
+**Live probability visualization**
+At every step, the top 5 most probable next tokens are shown with normalized probability bars. The chosen token is highlighted with its exact probability.
 
-### Editable Corpus
-Paste any text you like — Alice in Wonderland (included) is just the default. The model rebuilds instantly.
+**"How it works" panel**
+Click *f How it works* to expand a panel showing the exact mathematical formula and a live worked calculation with real corpus counts from the last step.
+
+![ngramflow character-level trigram with theory panel](images/screenshot2.png)
+
+**Editable corpus**
+Paste any text into the corpus field and rebuild the model instantly. Alice in Wonderland (Chapters I-III) is included as the default.
 
 ## Getting Started
 
-Open `index.html` in any modern browser. No build step, no dependencies — pure HTML/CSS/JS.
+No build step, no dependencies. Just open `index.html` in any modern browser.
 
 ```bash
-# Clone or download
+git clone https://github.com/Piece-Of-Schmidt/ngramflow.git
 cd ngramflow
-
-# Open in browser
 open index.html
-# or
-firefox index.html
 ```
 
 ## How It Works
 
-The core algorithm computes conditional probabilities from frequency tables:
+The model estimates conditional probabilities from raw frequency counts:
 
 ```
 P(w | context) = count(context, w) / count(context, *)
 ```
 
-Then **weighted random sampling** (not greedy argmax) picks the next token proportionally to these probabilities. This mirrors Shannon's original approach and shows why even simple n-gram models produce surprisingly plausible text.
+At each step, the next token is chosen by **weighted random sampling**, not greedy argmax. Each token is selected proportionally to its probability, so generation is stochastic and varied across runs. This mirrors Shannon's original approach.
 
-## Architecture
+If a context was never seen in the training corpus, the model falls back gracefully: trigram to bigram, bigram to unigram. The theory panel shows when and why this happens.
 
-- **`index.html`** — DOM structure only
-- **`style.css`** — Modern light design with smooth animations
-- **`corpus.js`** — Default training corpus (Alice in Wonderland, Ch. I–III)
-- **`model.js`** — Core `NgramModel` class with full JSDoc comments
-- **`app.js`** — State management, rendering, event handling
+## Project Structure
 
-Load order: `corpus.js` → `model.js` → `app.js` (all deferred in the HTML).
+```
+ngramflow/
+├── index.html    # HTML structure
+├── style.css     # Styling and animations
+├── corpus.js     # Default training corpus (Alice in Wonderland, public domain)
+├── model.js      # NgramModel class with full JSDoc comments
+└── app.js        # UI state, rendering, event handling
+```
 
-## Implementation Notes
-
-### Tokenization
-
-**Word-level**: Lowercase, strip punctuation (keep apostrophes), split on whitespace.  
-**Character-level**: Lowercase, keep only a–z and space.
-
-### Fallback Chain
-
-If the exact context is not in the training corpus:
-- Trigram → Bigram → Unigram → Use unigram distribution
-
-This graceful degradation is shown in real time in the "How it Works" panel.
-
-### Probability Display
-
-The top-5 bars are **normalized to the highest probability** (100%), not absolute percentages. This makes relative differences visible even when absolute probabilities are small.
-
-### Sampling, Not Greedy
-
-We use weighted random sampling, so the same prompt can generate different outputs. This is intentional — it shows the stochastic nature of language generation and why pure n-gram models produce varied (and sometimes silly) results.
+Scripts are loaded in dependency order via `defer`: `corpus.js` then `model.js` then `app.js`.
 
 ## Educational Use
 
-Perfect for seminar or classroom settings:
+ngramflow was built for a university seminar on word embeddings and language modeling. Suggested use:
 
-1. **Show Shannon's Insight** — Start with character-level trigrams. The fact that readable English emerges from pure statistics is remarkable.
-2. **Build Intuition** — Watch how bigrams > unigrams, trigrams > bigrams. Context matters.
-3. **Fallback Behavior** — When does the model fall back? Why? This teaches the importance of sufficient training data.
-4. **Segue to Neural Models** — Once students understand n-grams, explain transformers as "n-grams with infinite (learned) context and better probability estimates."
+1. **Start with character-level trigrams.** The fact that near-readable English emerges from letter statistics alone is a powerful hook.
+2. **Compare model orders.** Unigram generates noise, bigram produces fragments, trigram produces surprisingly coherent phrases.
+3. **Open the theory panel.** Students can verify the exact probability calculation behind each generated token.
+4. **Segue to neural models.** Once n-grams are understood, transformers can be framed as models with unlimited (learned) context and smoother probability estimates.
 
-## Why N-Grams?
+## Background
 
-Before transformers, before LSTM, before RNNs — there were n-grams. They're:
-- **Simple**: Frequency counting + conditional probability
-- **Transparent**: You can see exactly why each token was chosen
-- **Pedagogical**: The foundation for understanding all modern language models
+Before transformers, before LSTMs, before word embeddings, there were n-grams. They are:
 
-ngramflow puts that foundation in your hands.
-
-## Browser Support
-
-Any modern browser (Chrome, Firefox, Safari, Edge). Requires ES6 JavaScript and CSS Grid.
-
-## License
-
-The default corpus (Alice's Adventures in Wonderland) is public domain.  
-This tool is provided as-is for educational purposes.
+- **Transparent**: every probability is directly traceable to corpus counts
+- **Pedagogically valuable**: the bridge between raw text statistics and modern language modeling
+- **Historically significant**: Shannon used this exact approach to estimate the entropy of English in 1948
 
 ---
 
-**Inspired by:**
-- C. E. Shannon, *A Mathematical Theory of Communication* (1948)
-- The famous observation: *"If one chooses words at random ... one obtains reasonable sentences."*
-
-Built for the Word Embeddings seminar, Lisbon 2026.
+*Built for the Word Embeddings seminar, Lisbon 2026.*
+*Corpus: Lewis Carroll, Alice's Adventures in Wonderland (1865), public domain via Project Gutenberg.*
