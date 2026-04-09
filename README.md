@@ -4,6 +4,7 @@ An interactive web app to visualize how n-gram language models work, one token a
 
 Inspired by Claude Shannon's foundational 1948 paper *A Mathematical Theory of Communication*, **ngramflow** makes statistical language modeling tangible: train a model on any text, then watch it generate word by word (or character by character), with live probability distributions at every step.
 
+![ngramflow word-level demo](images/screenshot1.png)
 
 ## Features
 
