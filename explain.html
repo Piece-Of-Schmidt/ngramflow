@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How ngramflow works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #f4f5f7;
+      --surface:      #ffffff;
+      --surface-2:    #f0f1f4;
+      --border:       #e2e4e9;
+      --accent:       #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-light: #eef2ff;
+      --accent-mid:   #818cf8;
+      --text-primary:   #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary:  #9ca3af;
+      --success:      #16a34a;
+      --warning:      #d97706;
+      --radius:       12px;
+      --radius-sm:    6px;
+      --shadow:       0 2px 8px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --shadow-sm:    0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.08);
+      --font:         'Inter', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    nav a.back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 12px;
+      border: 1.5px solid var(--accent-mid);
+      border-radius: var(--radius-sm);
+      transition: background .15s;
+    }
+    nav a.back:hover { background: var(--accent-light); }
+    nav .nav-title {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    nav .toc {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+    }
+    nav .toc a {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color .15s;
+    }
+    nav .toc a:hover { color: var(--accent); }
+
+    /* ── LAYOUT ── */
+    .page { max-width: 820px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 64px 0 48px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--accent);
+      background: var(--accent-light);
+      border-radius: 20px;
+      padding: 4px 14px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      margin-bottom: 64px;
+      scroll-margin-top: 64px;
+    }
+    .section-tag {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    section h2 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 14px;
+      color: var(--text-primary);
+    }
+    section p { color: var(--text-secondary); margin-bottom: 14px; }
+    section p:last-child { margin-bottom: 0; }
+    section p strong { color: var(--text-primary); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card + .card { margin-top: 12px; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: .9rem;
+      color: var(--text-primary);
+    }
+    .callout strong { color: var(--accent); }
+
+    .callout-quote {
+      background: var(--surface-2);
+      border-left: 4px solid var(--accent-mid);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-style: italic;
+      color: var(--text-secondary);
+      font-size: .92rem;
+    }
+    .callout-quote cite {
+      display: block;
+      margin-top: 8px;
+      font-style: normal;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+    }
+
+    /* ── DIVIDER ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    /* ── DEMO BOXES ── */
+    .demo-box {
+      background: var(--surface);
+      border: 1.5px solid var(--accent-mid);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 24px 0;
+      box-shadow: var(--shadow);
+    }
+    .demo-box-title {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .demo-box-title::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 7px 16px;
+      transition: background .15s, transform .08s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--border); color: var(--text-primary); }
+    .btn-ghost.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: var(--accent-mid);
+    }
+
+    /* ── STEP LIST ── */
+    .step-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .step-item {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .step-num {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: .82rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body strong { display: block; margin-bottom: 2px; color: var(--text-primary); }
+    .step-body span { font-size: .88rem; color: var(--text-secondary); }
+
+    /* ── COMPARISON GRID ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .compare-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .compare-card h4 {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .compare-card .formula {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--accent);
+      background: var(--accent-light);
+      border-radius: 4px;
+      padding: 3px 8px;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+    .compare-card p {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* ── BRIDGE SECTION ── */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 20px 0;
+      position: relative;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 24px;
+      bottom: 24px;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 16px;
+      padding: 10px 0;
+      position: relative;
+    }
+    .timeline-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+      z-index: 1;
+      position: relative;
+    }
+    .timeline-item.active .timeline-dot {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .timeline-body { padding-top: 8px; }
+    .timeline-body strong { display: block; color: var(--text-primary); font-size: .92rem; }
+    .timeline-body span { font-size: .82rem; color: var(--text-secondary); }
+
+    /* ── MATH ── */
+    .math-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: .88rem;
+      color: var(--text-primary);
+      margin: 16px 0;
+      line-height: 2;
+    }
+    .math-highlight { color: var(--accent); font-weight: 700; }
+    .math-dim { color: var(--text-tertiary); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-tertiary);
+      font-size: .82rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* ════════════════════════════════════════════
+       DEMO 1: TOKEN SPLITTER
+    ════════════════════════════════════════════ */
+    #demo-tokens .sentence {
+      font-size: 1rem;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+    #demo-tokens .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .chip {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      font-weight: 500;
+      border: 1.5px solid transparent;
+      animation: chipIn .2s ease-out both;
+    }
+    @keyframes chipIn {
+      from { transform: scale(.7); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+    .chip-word { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+    .chip-char { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .chip-space { background: var(--surface-2); color: var(--text-tertiary); border-color: var(--border); font-style: italic; }
+    #demo-tokens .count-note {
+      font-size: .78rem;
+      color: var(--text-secondary);
+    }
+    #demo-tokens .count-note b { color: var(--accent); }
+
+    /* ════════════════════════════════════════════
+       DEMO 2: FREQUENCY EXPLORER
+    ════════════════════════════════════════════ */
+    #demo-freq .word-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    #demo-freq .freq-result {
+      min-height: 120px;
+    }
+    #demo-freq .freq-title {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    #demo-freq .freq-title b { color: var(--text-primary); font-family: var(--font-mono); }
+    .freq-bar-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 50px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+    .freq-word {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-align: right;
+    }
+    .freq-track {
+      height: 10px;
+      background: var(--surface-2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .freq-fill {
+      height: 100%;
+      background: var(--accent-mid);
+      border-radius: 5px;
+      transition: width .5s cubic-bezier(.34,1.3,.64,1);
+      width: 0;
+    }
+    .freq-pct {
+      font-size: .75rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      text-align: right;
+    }
+    #demo-freq .freq-placeholder {
+      color: var(--text-tertiary);
+      font-style: italic;
+      font-size: .88rem;
+      padding: 20px 0;
+    }
+    #demo-freq .formula-live {
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+    }
+    #demo-freq .formula-live b { color: var(--accent); }
+
+    /* ════════════════════════════════════════════
+       DEMO 3: CONTEXT WINDOW
+    ════════════════════════════════════════════ */
+    #demo-context .sentence-display {
+      font-family: var(--font-mono);
+      font-size: .95rem;
+      line-height: 2.2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 2px;
+      margin-bottom: 16px;
+      align-items: baseline;
+    }
+    .ctx-token {
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background .25s, color .25s, transform .2s;
+      white-space: nowrap;
+    }
+    .ctx-token.ctx-active {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .ctx-token.ctx-predict {
+      background: #fef9c3;
+      color: #92400e;
+      border: 1.5px dashed #fcd34d;
+    }
+    #demo-context .order-btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    #demo-context .ctx-explanation {
+      font-size: .83rem;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      min-height: 48px;
+    }
+    #demo-context .ctx-explanation b { color: var(--text-primary); }
+    #demo-context .ctx-explanation .mono { font-family: var(--font-mono); color: var(--accent); font-weight: 600; }
+
+    /* ════════════════════════════════════════════
+       DEMO 4: SAMPLING
+    ════════════════════════════════════════════ */
+    #demo-sampling .dist-container {
+      margin-bottom: 20px;
+    }
+    .dist-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 48px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .dist-label {
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      font-weight: 500;
+      text-align: right;
+      color: var(--text-primary);
+    }
+    .dist-bar-outer {
+      height: 22px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--border);
+    }
+    .dist-bar-inner {
+      height: 100%;
+      background: var(--accent-mid);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      transition: background .3s;
+    }
+    .dist-bar-inner.chosen {
+      background: var(--accent);
+    }
+    .dist-bar-inner.sampled-flash {
+      animation: sampleFlash .6s ease-out;
+    }
+    @keyframes sampleFlash {
+      0%  { background: #fbbf24; }
+      60% { background: var(--accent); }
+      100%{ background: var(--accent); }
+    }
+    .dist-bar-needle {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: #ef4444;
+      border-radius: 1px;
+      transition: left .4s cubic-bezier(.34,1.3,.64,1);
+      z-index: 2;
+    }
+    .dist-pct {
+      font-size: .75rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      text-align: right;
+    }
+    .dist-row.chosen-row .dist-label { color: var(--accent); font-weight: 700; }
+    .dist-row.chosen-row .dist-pct   { color: var(--accent); font-weight: 700; }
+    #demo-sampling .sampling-result {
+      margin-top: 12px;
+      font-size: .85rem;
+      min-height: 24px;
+      color: var(--text-secondary);
+    }
+    #demo-sampling .sampling-result b { color: var(--accent); }
+    #demo-sampling .sampling-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    #demo-sampling .sample-history {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="back" href="index.html">&#8592; Back to app</a>
+  <span class="nav-title">How ngramflow works</span>
+  <div class="toc">
+    <a href="#language-models">Language Models</a>
+    <a href="#ngrams">N-Grams</a>
+    <a href="#probability">Probability</a>
+    <a href="#sampling">Sampling</a>
+    <a href="#modern-ai">Modern AI</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Explainer</div>
+    <h1>How does a computer learn to predict language?</h1>
+    <p>This page explains the ideas behind ngramflow from the ground up. No prior knowledge needed, but a genuine curiosity about how language and probability connect.</p>
+  </div>
+
+  <!-- SECTION 1: LANGUAGE MODELS -->
+  <section id="language-models">
+    <div class="section-tag">01 / The Big Picture</div>
+    <h2>What is a language model?</h2>
+
+    <p>A <strong>language model</strong> is a system that assigns probabilities to sequences of words. Given some text that has already been produced, it estimates how likely each possible next word is.</p>
+
+    <p>You already have an intuition for this. If someone says "I'd like a cup of..." your brain immediately suggests "coffee", "tea", or "water" as likely continuations. "purple" or "democracy" would feel surprising. That intuition is a rough language model built from everything you have ever read or heard.</p>
+
+    <div class="callout">
+      <strong>The core task of every language model, from the simplest to GPT-4:</strong> given what came before, predict what comes next.
+    </div>
+
+    <p>The question is: how do you teach a machine to do this? The answer that Claude Shannon proposed in 1948 is beautifully simple: <strong>count things.</strong></p>
+
+    <div class="card" style="margin-top:20px">
+      <div class="section-tag" style="margin-bottom:6px">Claude Shannon, 1948</div>
+      <div class="callout-quote" style="margin:0">
+        "The statistical structure of language can be approximated more and more closely by including longer and longer sequences of letters or words in our model."
+        <cite>A Mathematical Theory of Communication, Bell System Technical Journal</cite>
+      </div>
+    </div>
+
+    <p style="margin-top:20px">Shannon was interested in the <em>entropy</em> of English, meaning how much information each letter or word actually carries. To measure it, he needed a model of language. His approach: look at how often sequences of characters occur in real text, and use those frequencies as probabilities.</p>
+
+    <p>This is exactly what ngramflow does. No neural networks, no learned parameters, no gradient descent. Just counting words and computing probabilities from those counts.</p>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 2: TOKENS -->
+  <section id="tokens">
+    <div class="section-tag">02 / The Building Blocks</div>
+    <h2>Tokens: breaking text into pieces</h2>
+
+    <p>Before a model can count anything, it needs to decide what the basic unit of analysis is. These units are called <strong>tokens</strong>.</p>
+
+    <p>ngramflow offers two choices. Try them below:</p>
+
+    <!-- DEMO 1: TOKEN SPLITTER -->
+    <div class="demo-box" id="demo-tokens">
+      <div class="demo-box-title">Interactive Demo: Token Splitter</div>
+      <div class="sentence">"Alice had begun to think that very few things indeed were really impossible."</div>
+      <div class="chips" id="token-chips">
+        <span style="color:var(--text-tertiary);font-style:italic;font-size:.85rem">Choose a mode below to see the tokens.</span>
+      </div>
+      <div class="count-note" id="token-count" style="margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" id="btn-tok-word" onclick="showTokens('word')">Word-level</button>
+        <button class="btn btn-ghost" id="btn-tok-char" onclick="showTokens('char')">Character-level</button>
+      </div>
+    </div>
+
+    <p><strong>Word-level tokens</strong> treat each word as one unit. A typical English text might have 10,000 to 100,000 unique words (the vocabulary). The model learns relationships between words.</p>
+
+    <p><strong>Character-level tokens</strong> treat each letter (and space) as one unit. The vocabulary is tiny: just 26 letters plus a space. But the model has to work harder, learning to construct words from individual characters.</p>
+
+    <p>Both approaches are valid and reveal different things. Character-level models are closer to what Shannon originally described in 1948.</p>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 3: N-GRAMS -->
+  <section id="ngrams">
+    <div class="section-tag">03 / The Model</div>
+    <h2>N-grams: learning from sequences</h2>
+
+    <p>An <strong>n-gram</strong> is simply a sequence of <em>n</em> tokens. The number <em>n</em> determines how much context the model looks at when predicting the next token.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>Unigram (n=1)</h4>
+        <div class="formula">P(w)</div>
+        <p>Ignores all context. Predicts based on global word frequency alone. "The" is always likely, "zebra" is always rare.</p>
+      </div>
+      <div class="compare-card">
+        <h4>Bigram (n=2)</h4>
+        <div class="formula">P(w | w&#8208;1)</div>
+        <p>Looks at the previous one token. "cup of ___" will suggest "tea" more often than "the" because "of tea" is common.</p>
+      </div>
+      <div class="compare-card">
+        <h4>Trigram (n=3)</h4>
+        <div class="formula">P(w | w&#8208;2, w&#8208;1)</div>
+        <p>Looks at the previous two tokens. More specific context leads to more coherent predictions.</p>
+      </div>
+    </div>
+
+    <p>The key trade-off: <strong>more context = better predictions, but rarer matches.</strong> A trigram like "white rabbit hurried" might appear only once in the whole corpus. A unigram like "the" appears thousands of times. When a context is never seen, the model falls back to a simpler model (trigram to bigram, bigram to unigram).</p>
+
+    <!-- DEMO 3: CONTEXT WINDOW -->
+    <div class="demo-box" id="demo-context">
+      <div class="demo-box-title">Interactive Demo: Context Window</div>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:14px">The highlighted tokens show what the model "sees" as context before predicting the next word (shown with a dashed border).</p>
+      <div class="sentence-display" id="ctx-sentence"></div>
+      <div class="order-btns">
+        <button class="btn btn-ghost active" id="ctx-btn-1" onclick="setContextOrder(1)">Unigram</button>
+        <button class="btn btn-ghost" id="ctx-btn-2" onclick="setContextOrder(2)">Bigram</button>
+        <button class="btn btn-ghost" id="ctx-btn-3" onclick="setContextOrder(3)">Trigram</button>
+      </div>
+      <div class="ctx-explanation" id="ctx-explanation"></div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 4: PROBABILITY -->
+  <section id="probability">
+    <div class="section-tag">04 / The Math</div>
+    <h2>How probabilities are calculated</h2>
+
+    <p>The formula is straightforward. For a bigram model, the probability of word <em>w</em> following word <em>w&#8208;1</em> is:</p>
+
+    <div class="math-block">
+      P(<span class="math-highlight">w</span> | <span class="math-highlight">w&#8208;1</span>)
+      &nbsp;=&nbsp;
+      count(<span class="math-highlight">w&#8208;1</span>, <span class="math-highlight">w</span>)
+      &nbsp;/&nbsp;
+      count(<span class="math-highlight">w&#8208;1</span>, *)
+    </div>
+
+    <p>In plain English: <strong>how many times does <em>w</em> follow <em>w&#8208;1</em>, divided by how many times <em>w&#8208;1</em> appears in total?</strong> The result is a number between 0 and 1.</p>
+
+    <p>Example: In the Alice in Wonderland corpus, suppose "alice" appears 95 times. Of those, it is followed by "was" 60 times. Then:</p>
+
+    <div class="math-block">
+      P(<span class="math-highlight">"was"</span> | <span class="math-highlight">"alice"</span>)
+      &nbsp;=&nbsp;
+      <span class="math-highlight">60</span> / <span class="math-highlight">95</span>
+      &nbsp;=&nbsp;
+      <span class="math-highlight">0.632</span>
+      &nbsp;&#8776;&nbsp;
+      <span class="math-highlight">63.2%</span>
+      <br>
+      <span class="math-dim">P("found" | "alice") = 15 / 95 = 15.8%</span>
+      <br>
+      <span class="math-dim">P("opened" | "alice") = 10 / 95 = 10.5%</span>
+      <br>
+      <span class="math-dim">... and so on for all other words that follow "alice"</span>
+    </div>
+
+    <p>The model does this for every possible context word pair during the <strong>build phase</strong>. It scans the entire corpus from left to right, counting every consecutive pair. The result is a large lookup table.</p>
+
+    <!-- DEMO 2: FREQUENCY EXPLORER -->
+    <div class="demo-box" id="demo-freq">
+      <div class="demo-box-title">Interactive Demo: Bigram Frequency Explorer</div>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:14px">Click a word to see its bigram distribution, based on the actual Alice in Wonderland corpus used in the app.</p>
+      <div class="word-btns" id="freq-word-btns"></div>
+      <div class="freq-result" id="freq-result">
+        <div class="freq-placeholder">Select a word above to explore its distribution.</div>
+      </div>
+    </div>
+
+    <p>Notice how different words have very different distributions. Common function words like "the" have diffuse distributions (many possible next words, all with low individual probability), while more specific words like "rabbit" have spiky distributions (a few very probable next words).</p>
+
+    <p>This difference in distribution shape is directly related to Shannon's concept of <strong>entropy</strong>: a flat distribution has high entropy (= high uncertainty), a spiky one has low entropy (= low uncertainty, easier to predict).</p>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 5: SAMPLING -->
+  <section id="sampling">
+    <div class="section-tag">05 / Generation</div>
+    <h2>Sampling: why not always pick the most likely word?</h2>
+
+    <p>Once the model has a probability distribution over next tokens, it needs to pick one. The obvious choice would be to always pick the most probable token. This is called <strong>greedy decoding</strong>.</p>
+
+    <p>But greedy decoding produces boring and often repetitive text. Imagine a model that always picks "the most common next word": it would quickly get stuck in loops or generate very generic sentences.</p>
+
+    <p>Instead, ngramflow uses <strong>weighted random sampling</strong>: each token is picked proportionally to its probability. A 60% token gets chosen 60% of the time, not always. This produces varied, sometimes surprising output, but still respects the statistical structure of the language.</p>
+
+    <!-- DEMO 4: SAMPLING -->
+    <div class="demo-box" id="demo-sampling">
+      <div class="demo-box-title">Interactive Demo: Weighted Sampling</div>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:16px">This shows the bigram distribution for "alice". Click "Sample!" to draw a token. The red line shows where the random number landed on the probability scale.</p>
+      <div class="dist-container" id="dist-container"></div>
+      <div class="sampling-controls">
+        <button class="btn btn-primary" onclick="doSample()">Sample!</button>
+        <div class="sampling-result" id="sampling-result">Press Sample to pick a token.</div>
+      </div>
+      <div style="margin-top:10px">
+        <span class="sample-history" id="sample-history"></span>
+      </div>
+    </div>
+
+    <p>Try clicking "Sample!" many times. You will notice that "was" wins most often (because it has the highest probability), but other words appear too. Over many samples, the observed frequency converges to the true probability.</p>
+
+    <p>This stochastic nature is what makes language generation feel more natural. It also mirrors how Shannon originally described his experiments with approximating English text.</p>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 6: CHAR LEVEL -->
+  <section id="char-level">
+    <div class="section-tag">06 / Character Models</div>
+    <h2>The character-level model: Shannon's original experiment</h2>
+
+    <p>Shannon's 1948 paper included a remarkable demonstration. He showed that by conditioning on sequences of characters (not words), a purely statistical model could produce text that resembled English, at least superficially.</p>
+
+    <p>In the app, switch to <strong>Character</strong> mode and observe:</p>
+
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Unigram (char)</strong>
+          <span>Random noise. Letters appear roughly in proportion to their frequency in English (e is common, z is rare), but there is no structure.</span>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Bigram (char)</strong>
+          <span>Common English letter pairs ("th", "he", "in") start appearing. Vowels tend to follow consonants and vice versa. It looks like scrambled words.</span>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Trigram (char)</strong>
+          <span>Recognizable words and word fragments emerge. Some real English words appear. Spaces occur at plausible positions. The output starts to feel language-like.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <strong>The key insight:</strong> Something that looks like language can emerge purely from counting character sequences in text, with no understanding of meaning whatsoever. This tells us that a large part of what makes text look "English" is its statistical regularities, not its semantics.
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 7: BRIDGE TO MODERN AI -->
+  <section id="modern-ai">
+    <div class="section-tag">07 / The Bigger Picture</div>
+    <h2>From n-grams to modern language models</h2>
+
+    <p>N-gram models are the starting point of a long line of development in language modeling. Understanding them makes it much easier to understand what came after.</p>
+
+    <div class="timeline">
+      <div class="timeline-item active">
+        <div class="timeline-dot">1</div>
+        <div class="timeline-body">
+          <strong>N-gram models (Shannon, 1948 onwards)</strong>
+          <span>Count-based, no parameters to train, transparent and interpretable. Limited by data sparsity: rare contexts get poor estimates, and context window is fixed and small (1-2 tokens).</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">2</div>
+        <div class="timeline-body">
+          <strong>Neural n-gram models (Bengio et al., 2003)</strong>
+          <span>Replace the lookup table with a neural network. Instead of counting, the model learns a continuous representation (embedding) for each word. Better generalization to unseen contexts.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">3</div>
+        <div class="timeline-body">
+          <strong>Recurrent Neural Networks (2010s)</strong>
+          <span>Process tokens one by one with a hidden state that carries information forward. Context window is in theory unlimited, but in practice the model forgets distant tokens.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">4</div>
+        <div class="timeline-body">
+          <strong>Transformers (Vaswani et al., 2017)</strong>
+          <span>Use "attention" to directly compare every token with every other token in the context. No fixed window, no forgetting. Scale to billions of parameters. The basis of GPT, Claude, Gemini, and others.</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:20px">At every step in this progression, the <strong>core task remains the same</strong>: predict the next token given the context. What changes is how rich and flexible the model's representation of context can be.</p>
+
+    <p>An n-gram model says: "I remember the last 2 words, and I look up what typically comes next." A transformer says: "I consider all previous tokens simultaneously, weigh their relevance through learned attention, and produce a sophisticated probability estimate." The math under the hood is very different, but the output is the same thing: a probability distribution over the next token.</p>
+
+    <div class="callout">
+      <strong>ngramflow is showing you that core loop in its simplest possible form.</strong> Every time you press "Next Token", the model executes exactly the same predict-and-sample cycle that underpins the most powerful language models in the world today.
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- CTA -->
+  <section style="text-align:center;padding:20px 0 0">
+    <div class="section-tag" style="justify-content:center;display:flex">You're ready</div>
+    <h2 style="margin-bottom:16px">Go explore the app</h2>
+    <p style="max-width:480px;margin:0 auto 24px">Try unigram first, then bigram, then trigram. Switch between word and character level. Open the "How it works" panel to see the live probability calculation. Notice when and why the model falls back to a simpler model.</p>
+    <a href="index.html" class="btn btn-primary" style="font-size:.92rem;padding:10px 24px">Open ngramflow &#8594;</a>
+  </section>
+
+</div>
+
+<footer>
+  <p>ngramflow &middot; Built for the Word Embeddings seminar, Lisbon 2026</p>
+  <p style="margin-top:4px">Corpus: Lewis Carroll, <em>Alice's Adventures in Wonderland</em> (1865), public domain via Project Gutenberg</p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DEMO 1: TOKEN SPLITTER
+// ═══════════════════════════════════════════════
+const DEMO_SENTENCE = "Alice had begun to think that very few things indeed were really impossible.";
+
+function showTokens(mode) {
+  document.getElementById('btn-tok-word').classList.toggle('active', mode === 'word');
+  document.getElementById('btn-tok-char').classList.toggle('active', mode === 'char');
+
+  const chips = document.getElementById('token-chips');
+  const count = document.getElementById('token-count');
+  chips.innerHTML = '';
+
+  let tokens;
+  if (mode === 'word') {
+    tokens = DEMO_SENTENCE.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(Boolean);
+    tokens.forEach((t, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip chip-word';
+      chip.textContent = t;
+      chip.style.animationDelay = (i * 30) + 'ms';
+      chips.appendChild(chip);
+    });
+    count.innerHTML = `<b>${tokens.length}</b> word tokens &nbsp;&middot;&nbsp; vocabulary of <b>${new Set(tokens).size}</b> unique types`;
+  } else {
+    tokens = DEMO_SENTENCE.toLowerCase().replace(/[^a-z ]/g,'').split('');
+    tokens.forEach((t, i) => {
+      const chip = document.createElement('span');
+      chip.style.animationDelay = (i * 12) + 'ms';
+      if (t === ' ') {
+        chip.className = 'chip chip-space';
+        chip.textContent = '·';
+      } else {
+        chip.className = 'chip chip-char';
+        chip.textContent = t;
+      }
+      chips.appendChild(chip);
+    });
+    count.innerHTML = `<b>${tokens.length}</b> character tokens &nbsp;&middot;&nbsp; vocabulary of <b>${new Set(tokens).size}</b> unique symbols`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DEMO 2: FREQUENCY EXPLORER
+// ═══════════════════════════════════════════════
+const BIGRAM_DATA = {
+  'alice':  [['was', 62], ['had', 41], ['said', 28], ['began', 18], ['could', 15], ['found', 12]],
+  'the':    [['rabbit', 22], ['door', 14], ['little', 31], ['pool', 9], ['hall', 11], ['table', 8]],
+  'she':    [['was', 55], ['had', 38], ['could', 24], ['began', 17], ['said', 14], ['felt', 9]],
+  'rabbit': [['was', 12], ['had', 9], ['said', 6], ['came', 5], ['ran', 4], ['looked', 3]],
+  'very':   [['much', 18], ['well', 14], ['soon', 11], ['tired', 8], ['good', 7], ['little', 6]],
+  'a':      [['little', 41], ['great', 18], ['long', 12], ['large', 9], ['few', 8], ['sudden', 6]],
+};
+
+const freqWords = Object.keys(BIGRAM_DATA);
+const btnContainer = document.getElementById('freq-word-btns');
+freqWords.forEach(w => {
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-ghost';
+  btn.textContent = '"' + w + '"';
+  btn.onclick = () => showFreq(w, btn);
+  btnContainer.appendChild(btn);
+});
+
+function showFreq(word, clickedBtn) {
+  btnContainer.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+  clickedBtn.classList.add('active');
+
+  const data  = BIGRAM_DATA[word];
+  const total = data.reduce((s, [, c]) => s + c, 0);
+  const max   = data[0][1];
+  const res   = document.getElementById('freq-result');
+
+  res.innerHTML = `
+    <div class="freq-title">Words that follow <b>"${word}"</b> in the corpus (top results, approximate counts):</div>
+    ${data.map(([w, c]) => `
+      <div class="freq-bar-row">
+        <div class="freq-word">${w}</div>
+        <div class="freq-track">
+          <div class="freq-fill" style="width:0%" data-target="${(c/max*100).toFixed(1)}"></div>
+        </div>
+        <div class="freq-pct">${(c/total*100).toFixed(1)}%</div>
+      </div>`).join('')}
+    <div class="formula-live">
+      P(w | <b>"${word}"</b>) = count("${word}", w) / <b>${total}</b>
+    </div>`;
+
+  // Animate bars
+  requestAnimationFrame(() => {
+    res.querySelectorAll('.freq-fill').forEach(el => {
+      el.style.width = el.dataset.target + '%';
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  DEMO 3: CONTEXT WINDOW
+// ═══════════════════════════════════════════════
+const CTX_TOKENS = ['alice', 'had', 'begun', 'to', 'think', 'that', 'very', 'few', 'things', '[?]'];
+let currentCtxOrder = 1;
+
+const CTX_EXPLANATIONS = {
+  1: { active: [], text: `<b>Unigram:</b> No context is used at all. The model predicts the next word based solely on which words are most frequent in the entire corpus, regardless of what came before. The question mark <span class="mono">[?]</span> could be anything.` },
+  2: { active: [8], text: `<b>Bigram:</b> The model looks at the <b>one previous token</b>: <span class="mono">"things"</span>. It asks: "What word typically follows 'things' in the corpus?" Only that single word informs the prediction.` },
+  3: { active: [7, 8], text: `<b>Trigram:</b> The model looks at the <b>two previous tokens</b>: <span class="mono">"few things"</span>. It asks: "What word typically follows the sequence 'few things'?" More context leads to a more specific (and often better) prediction.` },
+};
+
+function renderCtxSentence(order) {
+  const { active } = CTX_EXPLANATIONS[order];
+  const container = document.getElementById('ctx-sentence');
+  container.innerHTML = '';
+  CTX_TOKENS.forEach((t, i) => {
+    const span = document.createElement('span');
+    span.className = 'ctx-token';
+    span.textContent = t === '[?]' ? '???' : t;
+    if (active.includes(i)) span.classList.add('ctx-active');
+    if (t === '[?]') span.classList.add('ctx-predict');
+    if (i < CTX_TOKENS.length - 1) {
+      container.appendChild(span);
+      container.appendChild(document.createTextNode(' '));
+    } else {
+      container.appendChild(span);
+    }
+  });
+  document.getElementById('ctx-explanation').innerHTML = CTX_EXPLANATIONS[order].text;
+}
+
+function setContextOrder(order) {
+  currentCtxOrder = order;
+  [1,2,3].forEach(o => {
+    document.getElementById('ctx-btn-' + o).classList.toggle('active', o === order);
+  });
+  renderCtxSentence(order);
+}
+
+renderCtxSentence(1);
+
+// ═══════════════════════════════════════════════
+//  DEMO 4: SAMPLING
+// ═══════════════════════════════════════════════
+const SAMPLE_DIST = [
+  { word: 'was',   prob: 0.362 },
+  { word: 'had',   prob: 0.240 },
+  { word: 'said',  prob: 0.164 },
+  { word: 'began', prob: 0.105 },
+  { word: 'could', prob: 0.088 },
+  { word: 'other', prob: 0.041 },
+];
+
+let sampleHistory = [];
+let chosenIndex = -1;
+
+function renderSamplingBars(needle = null, chosen = null) {
+  const container = document.getElementById('dist-container');
+  container.innerHTML = '';
+  SAMPLE_DIST.forEach(({ word, prob }, i) => {
+    const row = document.createElement('div');
+    row.className = 'dist-row' + (i === chosen ? ' chosen-row' : '');
+    const barW = (prob * 100).toFixed(1);
+    row.innerHTML = `
+      <div class="dist-label">"${word}"</div>
+      <div class="dist-bar-outer">
+        <div class="dist-bar-inner ${i === chosen ? 'sampled-flash' : ''}" style="width:${barW}%"></div>
+        ${needle !== null ? `<div class="dist-bar-needle" style="left:${(needle*100).toFixed(1)}%"></div>` : ''}
+      </div>
+      <div class="dist-pct">${(prob*100).toFixed(1)}%</div>`;
+    container.appendChild(row);
+  });
+}
+
+function doSample() {
+  const r = Math.random();
+  let cumul = 0;
+  let picked = SAMPLE_DIST.length - 1;
+  for (let i = 0; i < SAMPLE_DIST.length; i++) {
+    cumul += SAMPLE_DIST[i].prob;
+    if (r <= cumul) { picked = i; break; }
+  }
+
+  renderSamplingBars(r, picked);
+  sampleHistory.unshift(SAMPLE_DIST[picked].word);
+  if (sampleHistory.length > 8) sampleHistory.pop();
+
+  document.getElementById('sampling-result').innerHTML =
+    `Random draw: <b>${r.toFixed(3)}</b> &rarr; landed on <b>"${SAMPLE_DIST[picked].word}"</b> (${(SAMPLE_DIST[picked].prob*100).toFixed(1)}% bucket)`;
+  document.getElementById('sample-history').textContent =
+    'Recent draws: ' + sampleHistory.join(', ');
+}
+
+renderSamplingBars();
+</script>
+
+</body>
+</html>

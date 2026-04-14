@@ -491,9 +491,15 @@ main {
 .calc-note { font-size: .72rem; color: var(--text-tertiary); margin-top: 6px; font-style: italic; }
 .theory-placeholder { color: var(--text-tertiary); font-size: .8rem; font-style: italic; padding: 8px 0; }
 
-/* header theory button */
-.btn-theory {
+/* header buttons */
+.btn-explain {
   margin-left: auto;
+  font-size: .78rem;
+  padding: 5px 12px;
+  text-decoration: none;
+}
+.btn-theory {
+  margin-left: 8px;
   font-size: .78rem;
   padding: 5px 12px;
 }
