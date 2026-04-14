@@ -1,5 +1,7 @@
 # ngramflow
 
+👉 **[Try the live demo](https://ngramflows.netlify.app/)**
+
 An interactive web app to visualize how n-gram language models work, one token at a time.
 
 Inspired by Claude Shannon's foundational 1948 paper *A Mathematical Theory of Communication*, **ngramflow** makes statistical language modeling tangible: train a model on any text, then watch it generate word by word (or character by character), with live probability distributions at every step.
